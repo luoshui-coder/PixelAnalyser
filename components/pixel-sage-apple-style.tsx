@@ -73,7 +73,7 @@ export function PixelSageAppleStyle() {
     "描述图片的构图和色彩特点",
     "推测这张图片可能的拍摄地点和时间",
     "比较图片中的前景和背景",
-    "分析图��中的光线效果"
+    "分析图中的光线效果"
   ])
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null)
   const [editingPromptValue, setEditingPromptValue] = useState('')
@@ -141,7 +141,8 @@ export function PixelSageAppleStyle() {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (e) => {
-        const img = new Image()
+        // @ts-ignore
+        const img: HTMLImageElement = new Image()
         img.onload = () => {
           const canvas = document.createElement('canvas')
           const ctx = canvas.getContext('2d')
