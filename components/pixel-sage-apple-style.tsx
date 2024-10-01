@@ -141,7 +141,7 @@ export function PixelSageAppleStyle() {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (e) => {
-        // @ts-ignore
+        // @ts-expect-error 这里我们期望 Image 构造函数可以不带参数使用
         const img: HTMLImageElement = new Image()
         img.onload = () => {
           const canvas = document.createElement('canvas')
