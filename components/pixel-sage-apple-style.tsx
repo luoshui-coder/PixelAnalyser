@@ -65,15 +65,15 @@ export function PixelSageAppleStyle() {
   const [isLoading, setIsLoading] = useState(false)
   const [prompts, setPrompts] = useState<string[]>([
     "描述这张图片的主要内容",
-    "这张图片中有哪些物体？",
-    "分析图片中的场景和氛围",
-    "识别并描述图片中的文字内容",
-    "生成一个适合这张图片的标题",
-    "分析图片中人物的表情和姿态",
-    "描述图片的构图和色彩特点",
-    "推测这张图片可能的拍摄地点和时间",
-    "比较图片中的前景和背景",
-    "分析图中的光线效果"
+    "分析图片中的主要颜色和色调",
+    "识别图片中的主要物体或人物",
+    "描述图片中的场景和氛围",
+    "分析图片的构图和布局",
+    "解释图片可能传达的情感或信息",
+    "比较图片中的前景和背景元素",
+    "推测这张图片的拍摄时间和地点",
+    "分析图片中的光线和阴影效果",
+    "识别并解释图片中的任何符号或隐喻"
   ])
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null)
   const [editingPromptValue, setEditingPromptValue] = useState('')
@@ -439,7 +439,7 @@ export function PixelSageAppleStyle() {
             图说心语
           </h1>
           <p className="text-lg text-gray-600 mt-1">
-            与图片对话，倾听它们的故事
+          与图片对话，理解每幅图像的故事
           </p>
           <Dialog>
             <DialogTrigger asChild>
