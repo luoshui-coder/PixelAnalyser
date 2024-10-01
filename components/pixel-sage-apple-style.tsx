@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon, GripVertical } from 'lucide-react'
+import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import Image from 'next/image'
 
 // 定义更具体的类型
 type Image = {
@@ -72,7 +73,7 @@ export function PixelSageAppleStyle() {
     "描述图片的构图和色彩特点",
     "推测这张图片可能的拍摄地点和时间",
     "比较图片中的前景和背景",
-    "分析图片中的光线效果"
+    "分析图��中的光线效果"
   ])
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null)
   const [editingPromptValue, setEditingPromptValue] = useState('')
@@ -511,7 +512,14 @@ export function PixelSageAppleStyle() {
                       exit={{ opacity: 0, scale: 0.8 }}
                       className="relative group"
                     >
-                      <img src={image.url} alt={image.name} className="w-full h-auto rounded-lg" />
+                      <Image
+                        src={image.url}
+                        alt={image.name}
+                        width={100}  // 设置适当的宽度
+                        height={100}  // 设置适当的高度
+                        layout="responsive"
+                        className="rounded-lg"
+                      />
                       <Button
                         onClick={() => handleDeleteImage(image.id)}
                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
