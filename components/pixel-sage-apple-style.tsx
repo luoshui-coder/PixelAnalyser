@@ -89,7 +89,7 @@ export function PixelSageAppleStyle() {
       if (storedApiKey) {
         setApiKey(decryptApiKey(storedApiKey));
       }
-      setBaseUrl(localStorage.getItem('baseUrl') || 'https://api.groq.com/openai/v1')
+      setBaseUrl(localStorage.getItem('baseUrl') || 'https://open.bigmodel.cn/api/paas/v4')
       
       const savedPrompts = localStorage.getItem('savedPrompts');
       if (savedPrompts) {
