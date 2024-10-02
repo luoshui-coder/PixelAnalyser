@@ -64,15 +64,15 @@ export function PixelSageAppleStyle() {
   const [baseUrl, setBaseUrl] = useState('https://open.bigmodel.cn/api/paas/v4')
   const [isLoading, setIsLoading] = useState(false)
   const [prompts, setPrompts] = useState<string[]>([
-    "描述这张图片的主要内容",
+    "描述图片的主要内容",
+    "识别并解释图中的文字",
     "分析图片中的主要颜色和色调",
     "识别图片中的主要物体或人物",
     "描述图片中的场景和氛围",
-    "分析图片的构图和布局",
+    "分析图片的构图和色彩",
     "解释图片可能传达的情感或信息",
     "比较图片中的前景和背景元素",
     "推测这张图片的拍摄时间和地点",
-    "分析图片中的光线和阴影效果",
     "识别并解释图片中的任何符号或隐喻"
   ])
   const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null)
