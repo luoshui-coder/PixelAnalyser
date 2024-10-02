@@ -648,12 +648,12 @@ export function PixelSageAppleStyle() {
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              p: ({node, ...props}) => <p className="mb-2" {...props} />,
-                              a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
-                              code: ({node, inline, ...props}) => (
+                              p: ({children, ...props}) => <p className="mb-2" {...props}>{children}</p>,
+                              a: ({children, href, ...props}) => <a className="text-blue-600 hover:underline" href={href} {...props}>{children}</a>,
+                              code: ({children, inline, ...props}) => (
                                 inline 
-                                  ? <code className="bg-gray-100 rounded px-1" {...props} />
-                                  : <code className="block bg-gray-100 rounded p-2 my-2" {...props} />
+                                  ? <code className="bg-gray-100 rounded px-1" {...props}>{children}</code>
+                                  : <code className="block bg-gray-100 rounded p-2 my-2" {...props}>{children}</code>
                               ),
                             }}
                           >
