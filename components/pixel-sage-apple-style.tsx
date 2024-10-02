@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon } from 'lucide-react'
+import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon, TrashIcon } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Image from 'next/image'
@@ -141,33 +141,48 @@ export function PixelSageAppleStyle() {
     files.forEach(file => {
       const reader = new FileReader()
       reader.onload = (e) => {
-        // @ts-expect-error 这里我们期望 Image 构造函数可以不带参数使用
-        const img: HTMLImageElement = new Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          if (ctx) {
-            canvas.width = img.width
-            canvas.height = img.height
+        try {
+          const img = document.createElement('img')
+          img.onload = () => {
+            try {
+              const canvas = document.createElement('canvas')
+              const ctx = canvas.getContext('2d')
+              if (ctx) {
+                canvas.width = img.width
+                canvas.height = img.height
 
-            // Apply Gaussian blur
-            ctx.filter = 'blur(3px)'
-            ctx.drawImage(img, 0, 0, img.width, img.height)
-            ctx.filter = 'none'
+                // Apply Gaussian blur
+                ctx.filter = 'blur(3px)'
+                ctx.drawImage(img, 0, 0, img.width, img.height)
+                ctx.filter = 'none'
 
-            // Draw the original image on top with reduced opacity for soft edges
-            ctx.globalAlpha = 0.9
-            ctx.drawImage(img, 0, 0, img.width, img.height)
+                // Draw the original image on top with reduced opacity for soft edges
+                ctx.globalAlpha = 0.9
+                ctx.drawImage(img, 0, 0, img.width, img.height)
 
-            const softEdgeImage = canvas.toDataURL()
-            setImages(prevImages => [...prevImages, {
-              id: Math.random().toString(36).substr(2, 9),
-              url: softEdgeImage,
-              name: file.name
-            }])
+                const softEdgeImage = canvas.toDataURL()
+                setImages(prevImages => [...prevImages, {
+                  id: Math.random().toString(36).substr(2, 9),
+                  url: softEdgeImage,
+                  name: file.name
+                }])
+              } else {
+                console.error('无法获取 canvas 上下文')
+              }
+            } catch (error) {
+              console.error('处理图像时出错:', error)
+            }
           }
+          img.onerror = () => {
+            console.error('加载图像失败')
+          }
+          img.src = e.target?.result as string
+        } catch (error) {
+          console.error('创建图像元素时出错:', error)
         }
-        img.src = e.target?.result as string
+      }
+      reader.onerror = () => {
+        console.error('读取文件失败')
       }
       reader.readAsDataURL(file)
     })
@@ -385,13 +400,19 @@ export function PixelSageAppleStyle() {
     if (format === 'txt') {
       content = chatHistory.map(chat => {
         const role = chat.role === 'user' ? '用户' : '智能助手';
-        return `${role}：\n${chat.content.replace(/的分析：\n/g, '的分析：')}\n\n`;
+        const formattedContent = chat.role === 'assistant' 
+          ? chat.content.replace(/\n+/g, ' ').trim() 
+          : chat.content.trim();
+        return `${role}：${formattedContent}\n\n`;
       }).join('')
       fileExtension = 'txt'
     } else if (format === 'md') {
       content = chatHistory.map(chat => {
         const role = chat.role === 'user' ? '用户' : '智能助手';
-        return `**${role}**：\n\n${chat.content}\n\n`;
+        const formattedContent = chat.role === 'assistant' 
+          ? chat.content.replace(/\n+/g, ' ').trim() 
+          : chat.content.trim();
+        return `**${role}**：${formattedContent}\n\n`;
       }).join('')
       fileExtension = 'md'
     }
@@ -430,28 +451,43 @@ export function PixelSageAppleStyle() {
     alert('设置已保存')
   }
 
+  const handleClearChat = () => {
+    if (window.confirm('确定要清空所有对话吗？此操作不可撤销。')) {
+      setChatHistory([]);
+    }
+  }
+
+  // 定义一个���用的卡片背景样式
+  const cardBackgroundStyle = "bg-white/60 backdrop-blur-lg shadow-lg rounded-3xl overflow-hidden border-none flex flex-col";
+
   return (
-    <div className="relative h-screen flex flex-col bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 overflow-hidden font-sans">
+    <div className="relative h-screen flex flex-col bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden font-sans">
+      <div className="absolute inset-0 z-0">
+        <canvas
+          ref={canvasRef}
+          className="w-full h-full"
+        />
+      </div>
       
       <div className="relative z-10 flex flex-col flex-grow px-8 py-4 max-w-7xl mx-auto w-full overflow-hidden">
         <header className="flex flex-col items-center mb-4 relative">
-          <h1 className="text-2xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
+          <h1 className="text-4xl font-bold text-center mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 via-pink-500 to-red-500">
             图说心语
           </h1>
-          <p className="text-lg text-gray-600 mt-1">
-          与图片对话，理解每幅图像的故事
+          <p className="text-xl mt-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+            与图片对话，倾听图像背后的故事
           </p>
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white/90 transition-all duration-300">
-                <SettingsIcon className="h-4 w-4 text-gray-600" />
+              <Button variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-white/50 backdrop-blur-md hover:bg-white/60 transition-all duration-300">
+                <SettingsIcon className="h-5 w-5 text-gray-700" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-white/90 backdrop-blur-md rounded-3xl border-none shadow-2xl">
+            <DialogContent className="bg-gray-100 rounded-lg border-none shadow-lg max-w-sm w-full p-4">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-semibold text-gray-800">设置</DialogTitle>
+                <DialogTitle className="text-xl font-semibold text-gray-800 mb-4">设置</DialogTitle>
               </DialogHeader>
-              <div className="grid gap-6 py-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <label htmlFor="apiKey" className="text-sm font-medium text-gray-700">
                     API Key
@@ -460,7 +496,7 @@ export function PixelSageAppleStyle() {
                     id="apiKey"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
-                    className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300"
+                    className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                   />
                 </div>
                 <div className="space-y-2">
@@ -471,13 +507,13 @@ export function PixelSageAppleStyle() {
                     id="baseUrl"
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
-                    className="rounded-xl border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50 transition-all duration-300"
+                    className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                   />
                 </div>
               </div>
               <Button 
                 onClick={handleSaveSettings}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-300"
+                className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition-all duration-300"
               >
                 保存设置
               </Button>
@@ -485,14 +521,14 @@ export function PixelSageAppleStyle() {
           </Dialog>
         </header>
         
-        <div className="flex gap-4 flex-grow overflow-hidden">
+        <div className="flex gap-6 flex-grow overflow-hidden h-[calc(100vh-160px)]">
           {/* 图片上传卡片 */}
-          <Card className="w-1/4 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden border border-gray-200 flex flex-col">
+          <Card className={`w-1/4 ${cardBackgroundStyle}`}>
             <CardContent className="p-4 flex flex-col h-full">
-              <h2 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-600">
+              <h2 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
                 图片上传
               </h2>
-              <Button onClick={() => fileInputRef.current?.click()} className="mb-4">
+              <Button onClick={() => fileInputRef.current?.click()} className="mb-4 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300">
                 <PlusIcon className="mr-2 h-4 w-4" /> 上传图片
               </Button>
               <input
@@ -516,18 +552,18 @@ export function PixelSageAppleStyle() {
                       <Image
                         src={image.url}
                         alt={image.name}
-                        width={100}  // 设置适当的宽度
-                        height={100}  // 设置适当的高度
+                        width={150}
+                        height={150}
                         layout="responsive"
-                        className="rounded-lg"
+                        className="rounded-2xl"
                       />
                       <Button
                         onClick={() => handleDeleteImage(image.id)}
-                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                         size="icon"
                         variant="destructive"
                       >
-                        <XIcon className="h-3 w-3" />
+                        <XIcon className="h-4 w-4" />
                       </Button>
                     </motion.div>
                   ))}
@@ -537,37 +573,49 @@ export function PixelSageAppleStyle() {
           </Card>
           
           {/* 对话卡片 */}
-          <Card className="w-1/2 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden border border-gray-200 flex flex-col">
+          <Card className={`w-1/2 ${cardBackgroundStyle}`}>
             <CardContent className="p-4 flex flex-col h-full">
               <div className="flex justify-between items-center mb-2">
-                <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
+                <h2 className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-500">
                   对话
                 </h2>
                 <div className="flex items-center space-x-2">
                   {isLoading && (
-                    <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full shadow-sm">
-                      <div className="flex items-center space-x-1">
+                    <div className="bg-white/80 backdrop-blur-md px-3 py-1 rounded-full shadow-sm">
+                      <div className="flex items-center space-x-2">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-gray-700">处理中... {progress}%</span>
+                        <span className="text-sm font-medium text-gray-700">处理中... {progress}%</span>
                       </div>
                     </div>
                   )}
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <DownloadIcon className="h-4 w-4" />
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full">
+                        <DownloadIcon className="h-5 w-5 text-gray-700" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-40">
+                    <PopoverContent className="w-48 bg-white/80 backdrop-blur-md rounded-xl shadow-lg">
                       <div className="flex flex-col space-y-2">
-                        <Button onClick={() => exportChat('txt')} variant="ghost">导出为 TXT</Button>
-                        <Button onClick={() => exportChat('md')} variant="ghost">导出为 Markdown</Button>
+                        <Button onClick={() => exportChat('txt')} variant="ghost" className="justify-start rounded-lg">
+                          导出为 TXT
+                        </Button>
+                        <Button onClick={() => exportChat('md')} variant="ghost" className="justify-start rounded-lg">
+                          导出为 Markdown
+                        </Button>
                       </div>
                     </PopoverContent>
                   </Popover>
+                  <Button
+                    onClick={handleClearChat}
+                    variant="ghost"
+                    size="icon"
+                    className="h-10 w-10 rounded-full"
+                  >
+                    <TrashIcon className="h-5 w-5 text-gray-700" />
+                  </Button>
                 </div>
               </div>
-              <ScrollArea className="flex-grow mb-2 h-[calc(100vh-300px)]">
+              <ScrollArea className="flex-grow mb-4 h-[calc(100vh-280px)]">
                 <div ref={chatContainerRef} className="space-y-2 pr-4">
                   <AnimatePresence>
                     {chatHistory.map((chat, index) => (
@@ -580,9 +628,9 @@ export function PixelSageAppleStyle() {
                         className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`p-2 rounded-xl text-sm ${
-                            chat.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                          } break-words shadow-sm inline-block max-w-[80%] whitespace-pre-wrap`}
+                          className={`p-3 rounded-2xl text-sm max-w-[80%] ${
+                            chat.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+                          } break-words shadow-md`}
                         >
                           {chat.content}
                         </div>
@@ -602,52 +650,61 @@ export function PixelSageAppleStyle() {
                     }
                   }}
                   placeholder="输入您的消息..."
-                  className="w-full pr-10"
-                  rows={3}
+                  className="w-full pr-12 rounded-2xl border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                  rows={2}
                 />
                 <Button 
                   onClick={handleChatSubmit} 
                   disabled={isLoading}
-                  className="absolute bottom-2 right-2 p-0 bg-transparent hover:bg-transparent"
+                  className="absolute bottom-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300"
                   size="icon"
-                  variant="ghost"
                 >
-                  <SendIcon className="h-5 w-5 text-gray-500 hover:text-gray-700" />
+                  <SendIcon className="h-4 w-4" />
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* 预设提示词卡片 */}
-          <Card className="w-1/4 bg-white/80 backdrop-blur-sm shadow-lg rounded-2xl overflow-hidden border border-gray-200 flex flex-col">
+          <Card className={`w-1/4 ${cardBackgroundStyle}`}>
             <CardContent className="p-4 flex flex-col h-full">
-              <h2 className="text-xl font-semibold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+              <h2 className="text-xl font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
                 预设提示词
               </h2>
-              <div className="flex-grow flex flex-col justify-between space-y-2">
+              <div className="flex-grow flex flex-col space-y-2 overflow-hidden">
                 {prompts.map((prompt, index) => (
                   <div
-                    key={prompt}
-                    className="flex items-center space-x-2 bg-white rounded-lg shadow-sm"
+                    key={index}
+                    className="flex items-center space-x-2 bg-white/50 rounded-xl shadow-sm"
                   >
                     {editingPromptIndex === index ? (
-                      <Input
-                        value={editingPromptValue}
-                        onChange={(e) => setEditingPromptValue(e.target.value)}
-                        onBlur={handleSavePrompt}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSavePrompt();
-                          if (e.key === 'Escape') handleCancelEdit();
-                        }}
-                        className="flex-grow text-sm py-2 max-w-[calc(100%-4rem)]"
-                        autoFocus
-                      />
+                      <div className="flex w-full items-center p-1">
+                        <Input
+                          value={editingPromptValue}
+                          onChange={(e) => setEditingPromptValue(e.target.value)}
+                          onBlur={handleSavePrompt}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSavePrompt();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                          className="flex-grow text-sm py-1 px-2 rounded-xl"
+                          autoFocus
+                        />
+                        <Button
+                          onClick={handleSavePrompt}
+                          size="sm"
+                          variant="ghost"
+                          className="ml-2"
+                        >
+                          保存
+                        </Button>
+                      </div>
                     ) : (
                       <>
                         <Button
                           onClick={() => handlePromptClick(prompt)}
                           variant="ghost"
-                          className="flex-grow justify-start text-left h-auto py-2 px-2 text-sm overflow-hidden"
+                          className="flex-grow justify-start text-left h-auto py-2 px-4 text-sm overflow-hidden rounded-xl hover:bg-blue-100 transition-colors"
                         >
                           <span className="truncate">{prompt}</span>
                         </Button>
@@ -655,9 +712,9 @@ export function PixelSageAppleStyle() {
                           onClick={() => handleEditPrompt(index)}
                           size="icon"
                           variant="ghost"
-                          className="flex-shrink-0 h-8 w-8 mr-1"
+                          className="flex-shrink-0 h-10 w-10 rounded-full"
                         >
-                          <EditIcon className="h-4 w-4" />
+                          <EditIcon className="h-5 w-5 text-gray-700" />
                         </Button>
                       </>
                     )}
@@ -670,8 +727,8 @@ export function PixelSageAppleStyle() {
       </div>
       
       {/* footer 部分 */}
-      <footer className="relative z-10 w-full py-2 bg-white/80 backdrop-blur-sm border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 flex justify-center items-center">
+      <footer className="relative z-10 w-full flex items-center justify-center" style={{ height: '40px' }}>
+        <div className="max-w-7xl mx-auto px-8">
           <p className="text-xs text-gray-600">
             © Copyright 2024. luoshui.life All rights reserved.
           </p>
