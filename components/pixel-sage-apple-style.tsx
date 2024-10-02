@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon, TrashIcon } from 'lucide-react'
+import { SendIcon, DownloadIcon, PlusIcon, XIcon, SettingsIcon, EditIcon, TrashIcon, Github } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import Image from 'next/image'
+import Link from 'next/link'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 // 定义更具体的类型
 type Image = {
@@ -457,7 +460,7 @@ export function PixelSageAppleStyle() {
     }
   }
 
-  // 定义一个���用的卡片背景样式
+  // 定义一个用的卡片背景样式
   const cardBackgroundStyle = "bg-white/60 backdrop-blur-lg shadow-lg rounded-3xl overflow-hidden border-none flex flex-col";
 
   return (
@@ -477,48 +480,58 @@ export function PixelSageAppleStyle() {
           <p className="text-xl mt-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
             与图片对话，倾听图像背后的故事
           </p>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="absolute right-0 top-1/2 -translate-y-1/2 rounded-full bg-white/50 backdrop-blur-md hover:bg-white/60 transition-all duration-300">
-                <SettingsIcon className="h-5 w-5 text-gray-700" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-gray-100 rounded-lg border-none shadow-lg max-w-sm w-full p-4">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-semibold text-gray-800 mb-4">设置</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label htmlFor="apiKey" className="text-sm font-medium text-gray-700">
-                    API Key
-                  </label>
-                  <Input
-                    id="apiKey"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  />
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+            <Link
+              href="https://github.com/luoshui-coder/PixelAnalyser"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-full bg-white/50 backdrop-blur-md hover:bg-white/60 transition-all duration-300 p-2"
+            >
+              <Github className="h-5 w-5 text-gray-700" />
+            </Link>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="rounded-full bg-white/50 backdrop-blur-md hover:bg-white/60 transition-all duration-300">
+                  <SettingsIcon className="h-5 w-5 text-gray-700" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-gray-100 rounded-lg border-none shadow-lg max-w-sm w-full p-4">
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold text-gray-800 mb-4">设置</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label htmlFor="apiKey" className="text-sm font-medium text-gray-700">
+                      API Key
+                    </label>
+                    <Input
+                      id="apiKey"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="baseUrl" className="text-sm font-medium text-gray-700">
+                      Base URL
+                    </label>
+                    <Input
+                      id="baseUrl"
+                      value={baseUrl}
+                      onChange={(e) => setBaseUrl(e.target.value)}
+                      className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
+                    />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="baseUrl" className="text-sm font-medium text-gray-700">
-                    Base URL
-                  </label>
-                  <Input
-                    id="baseUrl"
-                    value={baseUrl}
-                    onChange={(e) => setBaseUrl(e.target.value)}
-                    className="w-full rounded-md border-gray-300 bg-white focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                  />
-                </div>
-              </div>
-              <Button 
-                onClick={handleSaveSettings}
-                className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition-all duration-300"
-              >
-                保存设置
-              </Button>
-            </DialogContent>
-          </Dialog>
+                <Button 
+                  onClick={handleSaveSettings}
+                  className="w-full mt-6 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-md transition-all duration-300"
+                >
+                  保存设置
+                </Button>
+              </DialogContent>
+            </Dialog>
+          </div>
         </header>
         
         <div className="flex gap-6 flex-grow overflow-hidden h-[calc(100vh-160px)]">
@@ -632,7 +645,20 @@ export function PixelSageAppleStyle() {
                             chat.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
                           } break-words shadow-md`}
                         >
-                          {chat.content}
+                          <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({node, ...props}) => <p className="mb-2" {...props} />,
+                              a: ({node, ...props}) => <a className="text-blue-600 hover:underline" {...props} />,
+                              code: ({node, inline, ...props}) => (
+                                inline 
+                                  ? <code className="bg-gray-100 rounded px-1" {...props} />
+                                  : <code className="block bg-gray-100 rounded p-2 my-2" {...props} />
+                              ),
+                            }}
+                          >
+                            {chat.content}
+                          </ReactMarkdown>
                         </div>
                       </motion.div>
                     ))}
