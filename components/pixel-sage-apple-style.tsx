@@ -69,7 +69,7 @@ export function PixelSageAppleStyle() {
   const [prompts, setPrompts] = useState<string[]>([
     "描述图片的主要内容",
     "识别并解释图中的文字",
-    "分析图片中的主要颜色和色调",
+    "分析图片中的主要颜色色调",
     "识别图片中的主要物体或人物",
     "描述图片中的场景和氛围",
     "分析图片的构图和色彩",
@@ -84,6 +84,7 @@ export function PixelSageAppleStyle() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [progress, setProgress] = useState(0)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  const [isSending, setIsSending] = useState(false)
 
   useEffect(() => {
     // 在客户端加载时从 localStorage 获取数据
@@ -195,207 +196,123 @@ export function PixelSageAppleStyle() {
     setImages(prevImages => prevImages.filter(image => image.id !== id))
   }
 
-  const handleChatSubmit = async (e: React.FormEvent | React.MouseEvent) => {
+  const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && images.length > 0) {
-      const promptText = message.trim();
-      setMessage('');
-      setChatHistory(prev => [...prev, { role: 'user', content: promptText }]);
-      setIsLoading(true);
-      setProgress(0);
+    if (!message.trim() || isSending) return;
 
-      for (let i = 0; i < images.length; i++) {
-        const image = images[i];
-        try {
-          const imageBase64 = await getBase64(image.url);
-          const base64Data = imageBase64.split(',')[1];
+    setIsSending(true); // 开始发送时设置为 true
+    // ... 其他发送逻辑保持不变
 
-          const requestBody = {
-            model: "glm-4v",
-            messages: [
-              { 
-                role: "user", 
-                content: [
-                  { type: "text", text: promptText },
-                  { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${base64Data}` } }
-                ]
-              }
-            ],
-            stream: true
-          };
+    try {
+      if (message.trim() && images.length > 0) {
+        const promptText = message.trim();
+        setMessage('');
+        setChatHistory(prev => [...prev, { role: 'user', content: promptText }]);
+        setIsLoading(true);
+        setProgress(0);
 
-          const response = await fetch(`${baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-          });
+        for (let i = 0; i < images.length; i++) {
+          const image = images[i];
+          try {
+            const imageBase64 = await getBase64(image.url);
+            const base64Data = imageBase64.split(',')[1];
 
-          if (!response.ok) {
-            throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
-          }
+            const requestBody = {
+              model: "glm-4v",
+              messages: [
+                { 
+                  role: "user", 
+                  content: [
+                    { type: "text", text: promptText },
+                    { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${base64Data}` } }
+                  ]
+                }
+              ],
+              stream: true
+            };
 
-          const reader = response.body?.getReader();
-          const decoder = new TextDecoder();
-          let assistantMessage = '';
+            const response = await fetch(`${baseUrl}/chat/completions`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(requestBody)
+            });
 
-          if (reader) {
-            setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 的分析：\n` }]);
-            
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value);
-              const lines = chunk.split('\n');
-              for (const line of lines) {
-                if (line.startsWith('data: ')) {
-                  const data = line.slice(6);
-                  if (data === '[DONE]') continue;
-                  try {
-                    const parsed = JSON.parse(data);
-                    const content = parsed.choices[0]?.delta?.content || '';
-                    if (content) {
-                      assistantMessage += content;
-                      setChatHistory(prev => {
-                        const newHistory = [...prev];
-                        const lastMessage = newHistory[newHistory.length - 1];
-                        lastMessage.content = `图片 "${image.name}" 的分析：\n${assistantMessage}`;
-                        return newHistory;
-                      });
+            if (!response.ok) {
+              throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+            }
+
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let assistantMessage = '';
+
+            if (reader) {
+              setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 的分析：\n` }]);
+              
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+                for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                    const data = line.slice(6);
+                    if (data === '[DONE]') continue;
+                    try {
+                      const parsed = JSON.parse(data);
+                      const content = parsed.choices[0]?.delta?.content || '';
+                      if (content) {
+                        assistantMessage += content;
+                        setChatHistory(prev => {
+                          const newHistory = [...prev];
+                          const lastMessage = newHistory[newHistory.length - 1];
+                          lastMessage.content = `图片 "${image.name}" 的分析：\n${assistantMessage}`;
+                          return newHistory;
+                        });
+                      }
+                    } catch (error) {
+                      console.error('解析时出错:', error);
                     }
-                  } catch (error) {
-                    console.error('解析时出错:', error);
                   }
                 }
               }
             }
+
+            setProgress(Math.round(((i + 1) / images.length) * 100));
+
+            // 在每次更新chatHistory后，确保滚动到底部
+            if (chatContainerRef.current) {
+              setTimeout(() => {
+                if (chatContainerRef.current) {
+                  chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+                }
+              }, 0);
+            }
+
+          } catch (error) {
+            console.error(`处理图片 "${image.name}" 时出错:`, error);
+            setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(error) }]);
           }
-
-          setProgress(Math.round(((i + 1) / images.length) * 100));
-
-          // 在每次更新chatHistory后，确保滚动到底部
-          if (chatContainerRef.current) {
-            setTimeout(() => {
-              if (chatContainerRef.current) {
-                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-              }
-            }, 0);
-          }
-
-        } catch (error) {
-          console.error(`处理图片 "${image.name}" 时出错:`, error);
-          setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(error) }]);
         }
+        setIsLoading(false);
+        setProgress(100);
+      } else if (images.length === 0) {
+        alert('请先上传图片');
       }
-      setIsLoading(false);
-      setProgress(100);
-    } else if (images.length === 0) {
-      alert('请先上传图片');
+    } catch (error) {
+      // ... 错误处理
+    } finally {
+      setIsSending(false); // 无论成功还是失败,都在结束时设置为 false
     }
   };
 
-  const handlePromptClick = async (promptText: string) => {
-    if (images.length === 0) {
-      alert('请先上传图片')
-      return
-    }
-    setMessage(promptText)
-    setChatHistory(prev => [...prev, { role: 'user', content: promptText }])
-    setIsLoading(true)
-    setProgress(0)
-
-    for (let i = 0; i < images.length; i++) {
-      const image = images[i]
-      try {
-        const imageBase64 = await getBase64(image.url)
-        const base64Data = imageBase64.split(',')[1]
-
-        const requestBody = {
-          model: "glm-4v",
-          messages: [
-            { 
-              role: "user", 
-              content: [
-                { type: "text", text: promptText },
-                { type: "image_url", image_url: { "url": `data:image/jpeg;base64,${base64Data}` } }
-              ]
-            }
-          ],
-          stream: true
-        }
-
-        const response = await fetch(`${baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestBody)
-        })
-
-        if (!response.ok) {
-          throw new Error(`API请求失败: ${response.status} ${response.statusText}`)
-        }
-
-        const reader = response.body?.getReader()
-        const decoder = new TextDecoder()
-        let assistantMessage = ''
-
-        if (reader) {
-          setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 的分析：\n` }])
-          
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-            const chunk = decoder.decode(value)
-            const lines = chunk.split('\n')
-            for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6)
-                if (data === '[DONE]') continue
-                try {
-                  const parsed = JSON.parse(data)
-                  const content = parsed.choices[0]?.delta?.content || ''
-                  if (content) {
-                    assistantMessage += content
-                    setChatHistory(prev => {
-                      const newHistory = [...prev]
-                      const lastMessage = newHistory[newHistory.length - 1]
-                      lastMessage.content = `图片 "${image.name}" 的分析：\n${assistantMessage}`
-                      return newHistory
-                    })
-                  }
-                } catch (error) {
-                  console.error('析时出错:', error)
-                }
-              }
-            }
-          }
-        }
-
-        setProgress(Math.round(((i + 1) / images.length) * 100))
-
-        // 在每次更新chatHistory后，确保滚动到底部
-        if (chatContainerRef.current) {
-          setTimeout(() => {
-            if (chatContainerRef.current) {
-              chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-            }
-          }, 0);
-        }
-
-      } catch (error: unknown) {
-        console.error(`处理图片 "${image.name}" 时出错:`, error)
-        setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 分析错: ${error instanceof Error ? error.message : String(error)}` }])
-        setProgress(Math.round(((i + 1) / images.length) * 100))
-      }
-    }
-    setIsLoading(false)
-    setProgress(100)
-    setMessage('')
-  }
+  const handlePromptClick = (prompt: string) => {
+    if (isSending) return; // 如果正在发送消息,则不执行任何操作
+    setMessage(prompt);
+    handleChatSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
+  };
 
   const exportChat = (format: 'txt' | 'md') => {
     let content = ''
@@ -628,8 +545,12 @@ export function PixelSageAppleStyle() {
                   </Button>
                 </div>
               </div>
-              <ScrollArea className="flex-grow mb-4 h-[calc(100vh-280px)]">
-                <div ref={chatContainerRef} className="space-y-2 pr-4">
+              <div 
+                ref={chatContainerRef}
+                className="flex-grow mb-4 overflow-y-auto pr-4"
+                style={{ maxHeight: 'calc(100vh - 280px)' }}
+              >
+                <div className="space-y-2">
                   <AnimatePresence>
                     {chatHistory.map((chat, index) => (
                       <motion.div
@@ -643,28 +564,26 @@ export function PixelSageAppleStyle() {
                         <div
                           className={`p-3 rounded-2xl text-sm max-w-[80%] ${
                             chat.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                          } break-words shadow-md`}
+                          } break-words shadow-md flex items-center`} // 添加 flex 和 items-center
                         >
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
-                            components={
-                              {
-                                p: ({children}) => <p className="mb-2">{children}</p>,
-                                a: ({children, href}) => <a className="text-blue-600 hover:underline" href={href}>{children}</a>,
-                                code: ({children, className}) => {
-                                  const match = /language-(\w+)/.exec(className || '')
-                                  return match ? (
-                                    <code className="block bg-gray-100 rounded p-2 my-2">
-                                      {children}
-                                    </code>
-                                  ) : (
-                                    <code className="bg-gray-100 rounded px-1">
-                                      {children}
-                                    </code>
-                                  )
-                                },
-                              }
-                            }
+                            components={{
+                              p: ({children}) => <p className="mb-2 leading-relaxed">{children}</p>, // 添加 leading-relaxed
+                              a: ({children, href}) => <a className="text-blue-600 hover:underline" href={href}>{children}</a>,
+                              code: ({children, className}) => {
+                                const match = /language-(\w+)/.exec(className || '')
+                                return match ? (
+                                  <code className="block bg-gray-100 rounded p-2 my-2">
+                                    {children}
+                                  </code>
+                                ) : (
+                                  <code className="bg-gray-100 rounded px-1">
+                                    {children}
+                                  </code>
+                                )
+                              },
+                            }}
                           >
                             {chat.content}
                           </ReactMarkdown>
@@ -673,13 +592,13 @@ export function PixelSageAppleStyle() {
                     ))}
                   </AnimatePresence>
                 </div>
-              </ScrollArea>
+              </div>
               <div className="relative mt-auto">
                 <Textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Enter' && !e.shiftKey && !isSending) {
                       e.preventDefault();
                       handleChatSubmit(e);
                     }
@@ -687,10 +606,11 @@ export function PixelSageAppleStyle() {
                   placeholder="输入您的消息..."
                   className="w-full pr-12 rounded-2xl border-gray-300 focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
                   rows={2}
+                  disabled={isSending} // 发送过程中禁用输入框
                 />
                 <Button 
                   onClick={handleChatSubmit} 
-                  disabled={isLoading}
+                  disabled={isLoading || isSending} // 发送过程中或加载时禁用按钮
                   className="absolute bottom-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300"
                   size="icon"
                 >
@@ -740,6 +660,7 @@ export function PixelSageAppleStyle() {
                           onClick={() => handlePromptClick(prompt)}
                           variant="ghost"
                           className="flex-grow justify-start text-left h-auto py-2 px-4 text-sm overflow-hidden rounded-xl hover:bg-blue-100 transition-colors"
+                          disabled={isSending} // 在发送消息时禁用按钮
                         >
                           <span className="truncate">{prompt}</span>
                         </Button>
@@ -748,6 +669,7 @@ export function PixelSageAppleStyle() {
                           size="icon"
                           variant="ghost"
                           className="flex-shrink-0 h-10 w-10 rounded-full"
+                          disabled={isSending} // 在发送消息时禁用编辑按钮
                         >
                           <EditIcon className="h-5 w-5 text-gray-700" />
                         </Button>
