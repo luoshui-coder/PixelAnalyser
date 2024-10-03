@@ -602,7 +602,7 @@ export function PixelSageAppleStyle() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey && !isSending) {
                       e.preventDefault();
-                      handleChatSubmit(e);
+                      handleChatSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
                     }
                   }}
                   placeholder="输入您的消息..."
@@ -611,7 +611,7 @@ export function PixelSageAppleStyle() {
                   disabled={isSending} // 发送过程中禁用输入框
                 />
                 <Button 
-                  onClick={(e) => handleChatSubmit(e as React.MouseEvent<HTMLButtonElement>)} 
+                  onClick={(e) => handleChatSubmit(e)} 
                   disabled={isLoading || isSending} // 发送过程中或加载时禁用按钮
                   className="absolute bottom-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300"
                   size="icon"
