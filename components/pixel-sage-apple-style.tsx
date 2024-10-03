@@ -575,7 +575,7 @@ export function PixelSageAppleStyle() {
                             className="text-sm whitespace-pre-wrap break-words"
                             components={ {
                               p: ({ children }) => <span>{children}</span>,
-                              code: ({ node, inline, className, children, ...props }) => {
+                              code: ({ className, children }) => {
                                 const match = /language-(\w+)/.exec(className || '')
                                 return match ? (
                                   <code className="block bg-gray-100 rounded p-2 my-2 whitespace-pre-wrap">{children}</code>
