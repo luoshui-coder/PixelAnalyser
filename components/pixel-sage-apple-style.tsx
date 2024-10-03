@@ -69,7 +69,7 @@ export function PixelSageAppleStyle() {
   const [prompts, setPrompts] = useState<string[]>([
     "描述图片的主要内容",
     "识别并解释图中的文字",
-    "分析图片中的主要颜色色调",
+    "分析图片中的主要颜色色��",
     "识别图片中的主要物体或人物",
     "描述图片中的场景和氛围",
     "分析图片的构图和色彩",
