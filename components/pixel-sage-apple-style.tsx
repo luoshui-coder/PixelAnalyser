@@ -28,9 +28,9 @@ type ChatMessage = {
 }
 
 // 新增的错误处理函数
-const handleApiError = (error: unknown): string => {
-  if (error instanceof Error) {
-    return `API请求失败: ${error.message}`;
+const handleApiError = (err: unknown): string => {
+  if (err instanceof Error) {
+    return `API请求失败: ${err.message}`;
   }
   return '发生未知错误';
 }
@@ -200,9 +200,7 @@ export function PixelSageAppleStyle() {
     e.preventDefault();
     if (!message.trim() || isSending) return;
 
-    setIsSending(true); // 开始发送时设置为 true
-    // ... 其他发送逻辑保持不变
-
+    setIsSending(true);
     try {
       if (message.trim() && images.length > 0) {
         const promptText = message.trim();
@@ -301,10 +299,12 @@ export function PixelSageAppleStyle() {
       } else if (images.length === 0) {
         alert('请先上传图片');
       }
-    } catch (error) {
-      // ... 错误处理
+    } catch (err) {
+      console.error('发送消息时出错:', err)
+      setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(err) }]);
     } finally {
-      setIsSending(false); // 无论成功还是失败,都在结束时设置为 false
+      setIsSending(false);
+      setIsLoading(false);
     }
   };
 
