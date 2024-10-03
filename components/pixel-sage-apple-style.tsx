@@ -413,7 +413,7 @@ export function PixelSageAppleStyle() {
       content = chatHistory.map(chat => {
         const role = chat.role === 'user' ? '用户' : '智能助手';
         const formattedContent = chat.role === 'assistant' 
-          ? chat.content.replace(/\n+/g, ' ').trim() 
+          ? chat.content.split('\n').map(line => line.trim()).join('\n\n')
           : chat.content.trim();
         return `**${role}**：${formattedContent}\n\n`;
       }).join('')

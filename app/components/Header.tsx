@@ -2,7 +2,11 @@ import { Settings } from 'lucide-react'
 import Link from 'next/link'
 
 function Header() {
-  // ... 现有代码 ...
+  // 定义 openSettings 函数
+  const openSettings = () => {
+    // 这里可以添加打开设置对话框的逻辑
+    console.log('打开设置')
+  }
 
   return (
     <header className="flex items-center justify-between p-4">
