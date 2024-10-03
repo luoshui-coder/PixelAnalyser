@@ -196,7 +196,7 @@ export function PixelSageAppleStyle() {
     setImages(prevImages => prevImages.filter(image => image.id !== id))
   }
 
-  const handleChatSubmit = async (e: React.FormEvent) => {
+  const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (!message.trim() || isSending) return;
 
@@ -609,7 +609,7 @@ export function PixelSageAppleStyle() {
                   disabled={isSending} // 发送过程中禁用输入框
                 />
                 <Button 
-                  onClick={handleChatSubmit} 
+                  onClick={(e) => handleChatSubmit(e as React.MouseEvent<HTMLButtonElement>)} 
                   disabled={isLoading || isSending} // 发送过程中或加载时禁用按钮
                   className="absolute bottom-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300"
                   size="icon"
