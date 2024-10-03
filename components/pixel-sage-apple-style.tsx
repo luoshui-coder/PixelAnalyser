@@ -388,7 +388,7 @@ export function PixelSageAppleStyle() {
 
       } catch (error: unknown) {
         console.error(`处理图片 "${image.name}" 时出错:`, error)
-        setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 分析错误: ${error instanceof Error ? error.message : String(error)}` }])
+        setChatHistory(prev => [...prev, { role: 'assistant', content: `图片 "${image.name}" 分析错���: ${error instanceof Error ? error.message : String(error)}` }])
         setProgress(Math.round(((i + 1) / images.length) * 100))
       }
     }
@@ -647,15 +647,24 @@ export function PixelSageAppleStyle() {
                         >
                           <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
-                            components={{
-                              p: ({children, ...props}) => <p className="mb-2" {...props}>{children}</p>,
-                              a: ({children, href, ...props}) => <a className="text-blue-600 hover:underline" href={href} {...props}>{children}</a>,
-                              code: ({children, inline, ...props}) => (
-                                inline 
-                                  ? <code className="bg-gray-100 rounded px-1" {...props}>{children}</code>
-                                  : <code className="block bg-gray-100 rounded p-2 my-2" {...props}>{children}</code>
-                              ),
-                            }}
+                            components={
+                              {
+                                p: ({children}) => <p className="mb-2">{children}</p>,
+                                a: ({children, href}) => <a className="text-blue-600 hover:underline" href={href}>{children}</a>,
+                                code: ({children, className, node, ...props}) => {
+                                  const match = /language-(\w+)/.exec(className || '')
+                                  return match ? (
+                                    <code className="block bg-gray-100 rounded p-2 my-2" {...props}>
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className="bg-gray-100 rounded px-1" {...props}>
+                                      {children}
+                                    </code>
+                                  )
+                                },
+                              }
+                            }
                           >
                             {chat.content}
                           </ReactMarkdown>
