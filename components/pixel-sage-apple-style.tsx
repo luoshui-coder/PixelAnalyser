@@ -173,16 +173,16 @@ export function PixelSageAppleStyle() {
               } else {
                 console.error('无法获取 canvas 上下文')
               }
-            } catch (error) {
-              console.error('处理图像时出错:', error)
+            } catch (err) {
+              console.error('处理图像时出错:', err)
             }
           }
           img.onerror = () => {
             console.error('加载图像失败')
           }
           img.src = e.target?.result as string
-        } catch (error) {
-          console.error('创建图像元素时出错:', error)
+        } catch (err) {
+          console.error('读取图片时出错:', err)
         }
       }
       reader.onerror = () => {
