@@ -196,8 +196,10 @@ export function PixelSageAppleStyle() {
     setImages(prevImages => prevImages.filter(image => image.id !== id))
   }
 
-  const handleChatSubmit = async (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+  const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    if (e) {
+      e.preventDefault();
+    }
     if (!message.trim() || isSending) return;
 
     setIsSending(true);
@@ -313,7 +315,7 @@ export function PixelSageAppleStyle() {
   const handlePromptClick = (prompt: string) => {
     if (isSending) return; // 如果正在发送消息,则不执行任何操作
     setMessage(prompt);
-    handleChatSubmit(new Event('submit') as React.FormEvent<HTMLFormElement>);
+    handleChatSubmit(); // 直接调用，不传递事件对象
   };
 
   const exportChat = (format: 'txt' | 'md') => {
@@ -603,7 +605,7 @@ export function PixelSageAppleStyle() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey && !isSending) {
                       e.preventDefault();
-                      handleChatSubmit(e as unknown as React.FormEvent<HTMLFormElement>);
+                      handleChatSubmit();
                     }
                   }}
                   placeholder="输入您的消息..."
@@ -612,7 +614,7 @@ export function PixelSageAppleStyle() {
                   disabled={isSending} // 发送过程中禁用输入框
                 />
                 <Button 
-                  onClick={(e) => handleChatSubmit(e)} 
+                  onClick={() => handleChatSubmit()} 
                   disabled={isLoading || isSending} // 发送过程中或加载时禁用按钮
                   className="absolute bottom-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-full transition-all duration-300"
                   size="icon"
