@@ -200,7 +200,7 @@ export function PixelSageAppleStyle() {
     e.preventDefault();
     if (!message.trim() || isSending) return;
 
-    setIsSending(true); // 开始发送时设置为 true
+    setIsSending(true);
     // ... 其他发送逻辑保持不变
 
     try {
@@ -291,9 +291,9 @@ export function PixelSageAppleStyle() {
               }, 0);
             }
 
-          } catch (error) {
-            console.error(`处理图片 "${image.name}" 时出错:`, error);
-            setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(error) }]);
+          } catch (_err) {
+            console.error('处理图片时出错:', _err);
+            setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(_err) }]);
           }
         }
         setIsLoading(false);
@@ -301,10 +301,12 @@ export function PixelSageAppleStyle() {
       } else if (images.length === 0) {
         alert('请先上传图片');
       }
-    } catch (error) {
-      // ... 错误处理
+    } catch (_error) {
+      console.error('发送消息时出错:', _error);
+      setChatHistory(prev => [...prev, { role: 'assistant', content: handleApiError(_error) }]);
     } finally {
-      setIsSending(false); // 无论成功还是失败,都在结束时设置为 false
+      setIsSending(false);
+      setIsLoading(false);
     }
   };
 
