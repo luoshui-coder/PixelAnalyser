@@ -69,7 +69,7 @@ export function PixelSageAppleStyle() {
   const [prompts, setPrompts] = useState<string[]>([
     "描述图片的主要内容",
     "识别并解释图中的文字",
-    "分析图片中的主要颜色色��",
+    "分析图片中的主要颜色色",
     "识别图片中的主要物体或人物",
     "描述图片中的场景和氛围",
     "分析图片的构图和色彩",
@@ -564,25 +564,23 @@ export function PixelSageAppleStyle() {
                         className={`flex ${chat.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`p-3 rounded-2xl text-sm max-w-[80%] ${
-                            chat.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
-                          } break-words shadow-md flex items-center`} // 添加 flex 和 items-center
+                          className={`max-w-[80%] p-3 rounded-2xl ${
+                            chat.role === 'user'
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-white/80 backdrop-blur-sm shadow-md'
+                          }`}
                         >
-                          <ReactMarkdown 
+                          <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
+                            className="text-sm whitespace-pre-wrap break-words"
                             components={{
-                              p: ({children}) => <p className="mb-2 leading-relaxed">{children}</p>, // 添加 leading-relaxed
-                              a: ({children, href}) => <a className="text-blue-600 hover:underline" href={href}>{children}</a>,
-                              code: ({children, className}) => {
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              code: ({ node, inline, className, children, ...props }) => {
                                 const match = /language-(\w+)/.exec(className || '')
                                 return match ? (
-                                  <code className="block bg-gray-100 rounded p-2 my-2">
-                                    {children}
-                                  </code>
+                                  <code className="block bg-gray-100 rounded p-2 my-2 whitespace-pre-wrap">{children}</code>
                                 ) : (
-                                  <code className="bg-gray-100 rounded px-1">
-                                    {children}
-                                  </code>
+                                  <code className="bg-gray-100 rounded px-1 whitespace-pre-wrap">{children}</code>
                                 )
                               },
                             }}
